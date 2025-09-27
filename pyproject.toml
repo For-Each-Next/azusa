@@ -1,0 +1,81 @@
+[build-system]
+requires = [
+    "hatchling >= 1.26",
+]
+build-backend = "hatchling.build"
+
+[project]
+name = "azusa"
+dynamic = [
+    "version",
+]
+description = "A tool maintaining on-wiki reports."
+readme = { file = "README.rst", content-type = "text/x-rst" }
+authors = [
+    { name = "For Each ... Next", email = "for_each_next@outlook.com" },
+]
+license = { text = "MIT License" }
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content :: Wiki",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+    "Private :: Do Not Upload",
+]
+requires-python = ">=3.12"
+dependencies = [
+    "great-tables>=0.18.0",
+    "jinja2>=3.1.6",
+    "polars-u64-idx >= 1.33.1",
+    "pywikibot >= 10.5.0",
+    "sqlalchemy >= 2.0.43",
+]
+
+[tool.hatch.version]
+path = "src/azusa/__metadata__.py"
+
+[tool.ruff]
+line-length = 79
+preview = true
+show-fixes = true
+
+[tool.ruff.format]
+docstring-code-format = true
+docstring-code-line-length = 72
+
+[tool.ruff.lint]
+extend-select = [
+    "ALL",
+]
+ignore = [
+    "CPY001",
+]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"scripts/*.py" = [
+    "INP001",
+]
+"tests/*.py" = [
+    "INP001",
+]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+
+[tool.ruff.lint.pycodestyle]
+max-doc-length = 72
+max-line-length = 79
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
