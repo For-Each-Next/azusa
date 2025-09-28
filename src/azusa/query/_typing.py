@@ -19,4 +19,4 @@ type PywikibotSite = pywikibot.site.BaseSite
 
 # SQLAlchemy-related
 type Statement = Select | TextClause | str
-type StrMode = Literal["str", "bytes"]
+type StrMode = Literal["str", "bytes", "guess"]
