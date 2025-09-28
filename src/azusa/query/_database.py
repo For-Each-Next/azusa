@@ -1,22 +1,35 @@
-"""Core database functionality for MediaWiki database connections."""
+"""Core database functionality for MediaWiki connections."""
 
 from __future__ import annotations
 
 __all__ = ("Database",)
 
-from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple, Self, TypedDict
+from types import MappingProxyType
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    NamedTuple,
+    Self,
+    TypedDict,
+)
 from urllib.parse import urlencode
 
-from sqlalchemy import Engine, Row, create_engine, text
+import polars as pl
+from polars import DataType
+from sqlalchemy import Engine, Row, Select, create_engine, text
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    from polars.datatypes import DataTypeClass
     from sqlalchemy.engine.interfaces import DBAPIType
 
-    from azusa.query._typing import PywikibotSite, Statement
+    from azusa.query._typing import PywikibotSite, Statement, StrMode
 
 
 class ColumnInfo(NamedTuple):
-    """Container for database column metadata information.
+    """Container for database column metadata.
 
     Attributes:
         name: The name of the database column.
@@ -31,14 +44,58 @@ class RawQueryResult(TypedDict):
     """Type definition for raw database query results.
 
     Attributes:
-        schema: Tuple of ColumnInfo objects describing each column's
-            metadata.
-        data: Tuple of SQLAlchemy Row objects (tuples) containing the
-            query result data.
+        column_info: Tuple of ColumnInfo objects describing each
+            column's metadata.
+        rows: Tuple of SQLAlchemy Row objects (tuples) containing
+            the query result data.
     """
 
-    schema: tuple[ColumnInfo, ...]
-    data: tuple[Row[Any], ...]
+    column_info: tuple[ColumnInfo, ...]
+    rows: tuple[Row[Any], ...]
+
+
+def map_type_code(
+    code: DBAPIType | int,
+    str_mode: StrMode = "guess",
+) -> pl.datatypes.DataTypeClass:
+    """Map a database API type code to a Polars data type.
+
+    For example, code 3 is mapped to `polars.datatypes.Int64`.
+
+    Args:
+        code: The database API type code to map.
+        str_mode: How to handle string type codes. Can be 'str',
+            'bytes', or 'guess'.
+
+    Returns:
+        The corresponding Polars data type.
+    """
+    mapping = MappingProxyType({
+        1: pl.datatypes.Int64,
+        2: pl.datatypes.Int64,
+        3: pl.datatypes.Int64,
+        4: pl.datatypes.Float64,
+        5: pl.datatypes.Float64,
+        6: pl.datatypes.Null,  # uncertain
+        7: pl.datatypes.Datetime,
+        8: pl.datatypes.Int64,
+        10: pl.datatypes.Date,
+        246: pl.datatypes.Decimal,
+        247: "STR_TYPE",
+        248: "STR_TYPE",
+        249: "STR_TYPE",
+        250: "STR_TYPE",
+        252: "STR_TYPE",
+        253: "STR_TYPE",
+    })
+    if (result := mapping.get(code, pl.datatypes.Unknown)) != "STR_TYPE":
+        return result
+    match str_mode:
+        case "str":
+            return pl.datatypes.String
+        case "bytes":
+            return pl.datatypes.Binary
+    return pl.datatypes.Unknown
 
 
 class Database:
@@ -122,12 +179,54 @@ class Database:
         stmt = text(__stmt) if isinstance(__stmt, str) else __stmt
         with self._engine.connect() as connection, connection.begin():
             result = connection.execute(stmt)
-            schema = tuple(
+            column_info = tuple(
                 ColumnInfo(name=x[0], type_code=x[1])
                 for x in result.cursor.description
             )
-            data = tuple(result.fetchall())
-        return RawQueryResult(schema=schema, data=data)
+            rows = tuple(result.fetchall())
+        return RawQueryResult(column_info=column_info, rows=rows)
+
+    def fetch(
+        self,
+        __stmt: Statement,
+        /,
+        str_mode: StrMode | None = None,
+        schema_overrides: Mapping[str, DataTypeClass | DataType] | None = None,
+    ) -> pl.DataFrame:
+        """Execute a raw SQL statement and return a Polars DataFrame.
+
+        This method executes a statement to retrieve raw data, maps the
+        data types according to the given or inferred string mode, and
+        returns the query result as a DataFrame.
+
+        Args:
+            __stmt: The SQL-like statement used to fetch data.
+            str_mode: The string handling mode. Must be one of 'str',
+                'bytes', or 'guess'. If not specified, 'str' for Select
+                objects and 'bytes' for other cases.
+            schema_overrides: Optional schema overrides for the
+                resulting DataFrame.
+
+        Returns:
+            The collected Polars DataFrame containing the data.
+        """
+        str_mode_: StrMode
+        if str_mode is None:
+            str_mode_ = "str" if isinstance(__stmt, Select) else "bytes"
+        else:
+            str_mode_ = str_mode
+        raw_data = self.fetch_raw(__stmt)
+        schema = [
+            (col.name, map_type_code(col.type_code, str_mode_))
+            for col in raw_data["column_info"]
+        ]
+        lf = pl.LazyFrame(
+            raw_data["rows"],
+            schema,
+            schema_overrides=schema_overrides,
+            orient="row",
+        )
+        return lf.collect()
 
     @classmethod
     def from_site(
