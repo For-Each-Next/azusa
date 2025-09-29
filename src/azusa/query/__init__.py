@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
-__all__ = ("Database",)
+__all__ = ("Database", "tables")
 
+from azusa.query import tables
 from azusa.query._database import Database
