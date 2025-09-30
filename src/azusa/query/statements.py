@@ -71,7 +71,7 @@ def where_clauses(
 
 
 def query_pages_by_wikiproject(
-    __name: str | Iterable[str] | None,
+    __name: str | Iterable[str] | None = None,
     /,
     quality: str | Iterable[str] | None = None,
     priority: str | Iterable[str] | None = None,
