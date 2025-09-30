@@ -9,7 +9,7 @@ from __future__ import annotations
 __all__ = ("query_pages_by_wikiproject",)
 
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any, overload
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import BinaryExpression, Select, select
 
@@ -26,21 +26,10 @@ if TYPE_CHECKING:
     from sqlalchemy.orm import InstrumentedAttribute
 
 
-@overload
-def _generate_where_clause(
-    column: InstrumentedAttribute,
-    value: None,
-) -> None: ...
-
-
-@overload
 def _generate_where_clause(
     column: InstrumentedAttribute,
     value: str | float | Iterable[str | float],
-) -> BinaryExpression: ...
-
-
-def _generate_where_clause(column, value):
+) -> BinaryExpression:
     """Filter a column based on the specified value or values.
 
     Args:
@@ -48,11 +37,8 @@ def _generate_where_clause(column, value):
         value: The value or values of values to filter by.
 
     Returns:
-        Union: A condition representing the filter condition, or None if
-            the value is None.
+        Union: A condition representing the filter condition.
     """
-    if value is None:
-        return None
     if isinstance(value, str):
         return column.op("=")(value)
     try:
