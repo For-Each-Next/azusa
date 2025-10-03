@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-__all__ = ("__version__", "query")
+__all__ = ("__version__", "query", "text")
 
-from azusa import query
+from azusa import query, text
 from azusa.__metadata__ import __version__
