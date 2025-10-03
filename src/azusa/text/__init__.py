@@ -2,6 +2,6 @@
 
 from __future__ import annotations
 
-__all__ = ("section",)
+__all__ = ("AzusaTags",)
 
-from azusa.text import section
+from azusa.text._azusa_tags import AzusaTags
