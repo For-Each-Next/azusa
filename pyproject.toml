@@ -1,19 +1,13 @@
 [build-system]
-requires = [
-    "hatchling >= 1.26",
-]
+requires = ["hatchling >= 1.26"]
 build-backend = "hatchling.build"
 
 [project]
 name = "azusa"
-dynamic = [
-    "version",
-]
+dynamic = ["version"]
 description = "A tool maintaining on-wiki reports."
 readme = { file = "README.rst", content-type = "text/x-rst" }
-authors = [
-    { name = "For Each ... Next", email = "for_each_next@outlook.com" },
-]
+authors = [{ name = "For Each ... Next", email = "for_each_next@outlook.com" }]
 license = { text = "MIT License" }
 classifiers = [
     "Development Status :: 1 - Planning",
@@ -55,20 +49,12 @@ docstring-code-format = true
 docstring-code-line-length = 72
 
 [tool.ruff.lint]
-extend-select = [
-    "ALL",
-]
-ignore = [
-    "CPY001",
-]
+extend-select = ["ALL"]
+ignore = ["CPY001"]
 
 [tool.ruff.lint.extend-per-file-ignores]
-"scripts/*.py" = [
-    "INP001",
-]
-"tests/*.py" = [
-    "INP001",
-]
+"scripts/*.py" = ["INP001"]
+"tests/*.py" = ["INP001"]
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
