@@ -10,11 +10,11 @@ __all__ = (
 
 from typing import Literal
 
-import pywikibot
+from pywikibot.site._basesite import BaseSite  # noqa: PLC2701
 from sqlalchemy import Select, TextClause
 
 # Pywikibot-related
-type PywikibotSite = pywikibot.site.BaseSite
+type PywikibotSite = BaseSite
 
 
 # SQLAlchemy-related
